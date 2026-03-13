@@ -9,19 +9,25 @@ globalThis.addEventListener('DOMContentLoaded', (e) => {
 
 	loadGrid(grid, startingValues);
 
-	// const solveAllButton = document.getElementById('solve-all');
+	const solveAllButton = document.getElementById('solve-all');
 	const solveOneButton = document.getElementById('solve-one');
 	const undoOneButton = document.getElementById('undo-one');
+	const undoAllButton = document.getElementById('undo-all');
 
+	solveAllButton.onclick = (e) => {
+		let step;
+		while (step = solveStep(grid)) {
+			stepHistory.push(step);
+			grid[step.rowIndex][step.colIndex].value = step.result;
+		}
+	}
+	
 	solveOneButton.onclick = (e) => {
 		const step = solveStep(grid);
 
 		if (!step) {
 			return;
 		}
-
-		console.log(step);
-		
 
 		stepHistory.push(step);
 		grid[step.rowIndex][step.colIndex].value = step.result;
@@ -34,6 +40,13 @@ globalThis.addEventListener('DOMContentLoaded', (e) => {
 
 		const step = stepHistory.pop();
 		grid[step.rowIndex][step.colIndex].value = "";
+	}
+	
+	undoAllButton.onclick = (e) => {
+		while (stepHistory.length > 0) {
+			const step = stepHistory.pop();
+			grid[step.rowIndex][step.colIndex].value = "";
+		}
 	}
 });
 
@@ -101,10 +114,14 @@ function solveStep(grid) {
 			if (cell.value) {
 				continue;
 			}
+			
+			let result;
 
-			const result = checkLineOfSight(rowIndex, colIndex, grid);
-
-			if (result) {
+			if (result = lineOfSight(rowIndex, colIndex, grid)) {
+				return { rowIndex, colIndex, result };
+			}
+			
+			if (result = lastInBox(rowIndex, colIndex, grid)) {
 				return { rowIndex, colIndex, result };
 			}
 		}
@@ -113,7 +130,7 @@ function solveStep(grid) {
 	return null;
 }
 
-function checkLineOfSight(cellRow, cellCol, grid) {
+function lineOfSight(cellRow, cellCol, grid) {
 	const candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 	const seen = [];
 
@@ -150,3 +167,30 @@ function checkLineOfSight(cellRow, cellCol, grid) {
 	return diff[0];
 }
 
+function lastInBox(cellRow, cellCol, grid) {
+	const candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+	const seen = [];
+	
+	const rowOffset = Math.floor(cellRow / 3) * 3;
+	const colOffset = Math.floor(cellCol / 3) * 3;
+	
+	for (let i = rowOffset; i < rowOffset + 3; i++) {
+		for (let j = colOffset; j < colOffset + 3; j++) {
+			const value = grid[i][j].value;
+
+			if (!value) {
+				continue;
+			}
+			
+			seen.push(value);
+		}
+	}
+	
+	const diff = candidates.filter(num => !seen.includes(num));
+
+	if (diff.length != 1) {
+		return null;
+	}
+
+	return diff[0];
+}
