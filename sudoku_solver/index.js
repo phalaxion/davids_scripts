@@ -15,6 +15,14 @@ globalThis.addEventListener('DOMContentLoaded', (e) => {
 
 	solveOneButton.onclick = (e) => {
 		const step = solveStep(grid);
+
+		if (!step) {
+			return;
+		}
+
+		console.log(step);
+		
+
 		stepHistory.push(step);
 		grid[step.rowIndex][step.colIndex].value = step.result;
 	}
@@ -102,10 +110,43 @@ function solveStep(grid) {
 		}
 	}
 
-	return grid;
+	return null;
 }
 
 function checkLineOfSight(cellRow, cellCol, grid) {
-	return 1;
+	const candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+	const seen = [];
+
+	for (const [colIndex, cell] of grid[cellRow].entries()) {
+		const value = cell.value;
+
+		if (!value) {
+			continue;
+		}
+
+		if (!seen.includes(value)) {
+			seen.push(value);
+		}
+	}
+
+	for (const [rowIndex, row] of grid.entries()) {
+		const value = row[cellCol].value;
+
+		if (!value) {
+			continue;
+		}
+
+		if (!seen.includes(value)) {
+			seen.push(value);
+		}
+	}
+
+	const diff = candidates.filter(num => !seen.includes(num));
+
+	if (diff.length != 1) {
+		return null;
+	}
+
+	return diff[0];
 }
 
