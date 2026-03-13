@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Sudoku Solver</title>
+
+	<link rel="stylesheet" href="reset.css">
+
+	<style>
+		:root {
+			--highlight: rgba(20, 16, 243, 0.75);
+			--border: black;
+			--border-light: gray;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			display: flex;
+			height: 100vh;
+			justify-content: center;
+			align-items: center;
+		}
+
+		#sudoku-container {
+			display: grid;
+			grid: repeat(9, auto) / repeat(9, auto);
+			border: 2px solid var(--border);
+		}
+
+		.sudoku-cell {
+			aspect-ratio: 1 / 1;
+			margin: 0;
+			padding: 0;
+			width: 5rem;
+			text-align: center;
+			font-size: 3rem;
+			cursor: pointer;
+			caret-color: transparent;
+			border: 1px solid var(--border-light);
+		}
+
+		.sudoku-cell:focus {
+			outline: 1px solid var(--highlight);
+			border: 1px solid white;
+			box-shadow: 0px 0px 5px 2px var(--highlight);
+			z-index: 2;
+		}
+
+		.br { border-right: 2px solid var(--border); }
+		.bb { border-bottom: 2px solid var(--border); }
+		.bl { border-left: 2px solid var(--border); }
+		.bt { border-top: 2px solid var(--border); }
+	</style>
+</head>
+<body>
+	<div id="sudoku-container"></div>
+
+	<script src="index.js"></script>
+</body>
+</html>
