@@ -1,14 +1,32 @@
-globalThis.addEventListener('DOMContentLoaded', (event) => {
+globalThis.addEventListener('DOMContentLoaded', (e) => {
 	const GRID_SIZE = 9;
 
 	const startingCode = "9,,,5,,8,,,7|,8,,3,,2,9,,5|,5,4,,,,,8,|,7,,6,8,,,3,2|1,,,,,4,,,8|5,,,2,1,9,,6,|,,,9,,6,,,1|7,2,6,,,1,,4,|,,1,4,7,,,5,6"
 	const startingValues = startingCode.split('|').map(row => row.split(','));
 
-	const grid = generateGrid(GRID_SIZE);
+	const stepHistory = [];
+	let grid = generateGrid(GRID_SIZE);
 
-	loadGrid(grid, startingValues)
-	
-	
+	loadGrid(grid, startingValues);
+
+	// const solveAllButton = document.getElementById('solve-all');
+	const solveOneButton = document.getElementById('solve-one');
+	const undoOneButton = document.getElementById('undo-one');
+
+	solveOneButton.onclick = (e) => {
+		const step = solveStep(grid);
+		stepHistory.push(step);
+		grid[step.rowIndex][step.colIndex].value = step.result;
+	}
+
+	undoOneButton.onclick = (e) => {
+		if (stepHistory.length === 0) {
+			return;
+		}
+
+		const step = stepHistory.pop();
+		grid[step.rowIndex][step.colIndex].value = "";
+	}
 });
 
 function generateGrid(size) {
@@ -67,3 +85,27 @@ function loadGrid(grid, startingValues) {
 		}
 	}
 }
+
+function solveStep(grid) {
+	for (const [rowIndex, row] of grid.entries()) {
+		for (const [colIndex, cell] of row.entries()) {
+			// If it's already been solved, ignore it
+			if (cell.value) {
+				continue;
+			}
+
+			const result = checkLineOfSight(rowIndex, colIndex, grid);
+
+			if (result) {
+				return { rowIndex, colIndex, result };
+			}
+		}
+	}
+
+	return grid;
+}
+
+function checkLineOfSight(cellRow, cellCol, grid) {
+	return 1;
+}
+

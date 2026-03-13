@@ -9,13 +9,14 @@
 
 	<style>
 		:root {
-			--highlight: rgba(20, 16, 243, 0.75);
+			--highlight: oklch(0.44 0.3 266 / 0.75);
+			--highlight-dark: oklch(from var(--highlight) calc(l - 0.15) c h);
 
 			--border: black;
 			--border-light: gray;
 
 			--text: rgb(66, 66, 66);
-			--text-light: rgb(41, 70, 158);
+			--text-light: rgb(61, 100, 216);
 		}
 
 		* {
@@ -30,6 +31,27 @@
 			height: 100vh;
 			justify-content: center;
 			align-items: center;
+			flex-direction: column;
+		}
+
+		#sudoku-controller {
+			width: 50vw;
+			display: flex;
+			justify-content: space-between;
+			padding: 1rem;
+		}
+
+		#sudoku-controller button {
+			color: white;
+			background-color: var(--highlight);
+			border: 1px solid var(--highlight-dark);
+			border-radius: .5rem;
+			padding: 8px 16px;
+			cursor: pointer;
+		}
+
+		#sudoku-controller button:hover {
+			background-color: var(--highlight-dark);
 		}
 
 		#sudoku-container {
@@ -69,6 +91,14 @@
 	</style>
 </head>
 <body>
+	<div id="sudoku-controller">
+		<button id="solve-all">Solve All</button>
+
+		<button id="solve-one">Solve Step</button>
+
+		<button id="undo-one">Undo Step</button>
+	</div>
+
 	<div id="sudoku-container"></div>
 
 	<script src="index.js"></script>
