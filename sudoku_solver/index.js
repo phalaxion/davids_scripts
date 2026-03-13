@@ -27,6 +27,8 @@ globalThis.addEventListener('DOMContentLoaded', (e) => {
 	}
 	
 	solveOneButton.onclick = (e) => {
+		// rowOneValidSpot(0, 2, grid)
+	
 		const step = solveStep(grid);
 
 		if (!step) {
@@ -137,7 +139,17 @@ function solveStep(grid) {
 				return { rowIndex, colIndex, result };
 			}
 			
-			result = onlyOneSpotValidForNumber(rowIndex, colIndex, grid)
+			result = boxOneValidSpot(rowIndex, colIndex, grid)
+			if (result) {
+				return { rowIndex, colIndex, result };
+			}
+			
+			result = rowOneValidSpot(rowIndex, colIndex, grid)
+			if (result) {
+				return { rowIndex, colIndex, result };
+			}
+			
+			result = colOneValidSpot(rowIndex, colIndex, grid)
 			if (result) {
 				return { rowIndex, colIndex, result };
 			}
@@ -218,7 +230,7 @@ function lastInBox(cellRow, cellCol, grid) {
 	return diff[0];
 }
 
-function onlyOneSpotValidForNumber(cellRow, cellCol, grid) {
+function boxOneValidSpot(cellRow, cellCol, grid) {
 	let candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 	
 	const cellLos = lineOfSight(cellRow, cellCol, grid);
@@ -241,6 +253,94 @@ function onlyOneSpotValidForNumber(cellRow, cellCol, grid) {
 			
 			candidates = candidates.filter(n => los.includes(n));
 		}
+	}
+	
+	if (candidates.length != 1) {
+		return null
+	}
+	
+	return candidates[0];
+}
+
+function rowOneValidSpot(cellRow, cellCol, grid) {
+	let candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+	
+	const cellLos = lineOfSight(cellRow, cellCol, grid);
+	
+	candidates = candidates.filter(num => !cellLos.includes(num));
+	
+	const rowOffset = Math.floor(cellRow / 3) * 3;
+	const colOffset = Math.floor(cellCol / 3) * 3;
+	
+	for (let i = rowOffset; i < rowOffset + 3; i++) {
+		for (let j = colOffset; j < colOffset + 3; j++) {
+			if (i === cellRow && j === cellCol) continue;
+			
+			if (grid[i][j].value) {
+				candidates = candidates.filter(n => n != grid[i][j].value);
+			}
+		}
+	}
+	
+	if (candidates.length === 0) {
+		return null;
+	}
+	
+	for (let i = 0; i < 9; i++) {
+		if (i === cellCol) continue;
+		
+		if (grid[cellRow][i].value) {
+			candidates = candidates.filter(n => n != grid[cellRow][i].value);
+			continue;
+		}
+		
+		const los = lineOfSight(cellRow, i, grid);
+		
+		candidates = candidates.filter(n => los.includes(n));
+	}
+	
+	if (candidates.length != 1) {
+		return null
+	}
+	
+	return candidates[0];
+}
+
+function colOneValidSpot(cellRow, cellCol, grid) {
+	let candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+	
+	const cellLos = lineOfSight(cellRow, cellCol, grid);
+	
+	candidates = candidates.filter(num => !cellLos.includes(num));
+	
+	const rowOffset = Math.floor(cellRow / 3) * 3;
+	const colOffset = Math.floor(cellCol / 3) * 3;
+	
+	for (let i = rowOffset; i < rowOffset + 3; i++) {
+		for (let j = colOffset; j < colOffset + 3; j++) {
+			if (i === cellRow && j === cellCol) continue;
+			
+			if (grid[i][j].value) {
+				candidates = candidates.filter(n => n != grid[i][j].value);
+			}
+		}
+	}
+	
+	if (candidates.length === 0) {
+		return null;
+	}
+	
+	for (let i = 0; i < 9; i++) {
+		if (i === cellRow) continue;
+		
+		if (grid[i][cellCol].value) {
+			candidates = candidates.filter(n => n != grid[i][cellCol].value);
+			continue;
+		}
+		
+		const los = lineOfSight(i, cellCol, grid);
+		
+		candidates = candidates.filter(n => los.includes(n));
 	}
 	
 	if (candidates.length != 1) {
