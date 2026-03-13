@@ -1,8 +1,12 @@
-globalThis.addEventListener('DOMContentLoaded', (e) => {
-	const GRID_SIZE = 9;
+const DEBUG = true;
+const GRID_SIZE = 9;
 
-	const startingCode = "9,,,5,,8,,,7|,8,,3,,2,9,,5|,5,4,,,,,8,|,7,,6,8,,,3,2|1,,,,,4,,,8|5,,,2,1,9,,6,|,,,9,,6,,,1|7,2,6,,,1,,4,|,,1,4,7,,,5,6"
-	const startingValues = startingCode.split('|').map(row => row.split(','));
+globalThis.addEventListener('DOMContentLoaded', (e) => {
+	const easyCode = "9,,,5,,8,,,7|,8,,3,,2,9,,5|,5,4,,,,,8,|,7,,6,8,,,3,2|1,,,,,4,,,8|5,,,2,1,9,,6,|,,,9,,6,,,1|7,2,6,,,1,,4,|,,1,4,7,,,5,6";
+	const mediumCode = "3,,,,,7,,1,,|,4,,5,2,,,,,|7,,9,4,,,,,,|1,,2,,,,,,,|,,7,9,,6,8,,,|,,,,,,3,,7|,,,,,9,2,,6|,,,,7,4,,3,,|,6,,2,,,,,4|";
+	
+	
+	const startingValues = mediumCode.split('|').map(row => row.split(','));
 
 	const stepHistory = [];
 	let grid = generateGrid(GRID_SIZE);
@@ -83,6 +87,12 @@ function generateGrid(size) {
 
 			input.classList.add('sudoku-cell');
 
+			if (DEBUG) {
+				input.onclick = (e) => {
+					console.log(row, col);
+				}
+			}
+			
 			container.appendChild(input);
 			inputRow.push(input);
 		}
@@ -116,12 +126,19 @@ function solveStep(grid) {
 			}
 			
 			let result;
-
-			if (result = lineOfSight(rowIndex, colIndex, grid)) {
+			
+			result = onlyOnePossible(rowIndex, colIndex, grid)
+			if (result) {
 				return { rowIndex, colIndex, result };
 			}
 			
-			if (result = lastInBox(rowIndex, colIndex, grid)) {
+			result = lastInBox(rowIndex, colIndex, grid)
+			if (result) {
+				return { rowIndex, colIndex, result };
+			}
+			
+			result = onlyOneSpotValidForNumber(rowIndex, colIndex, grid)
+			if (result) {
 				return { rowIndex, colIndex, result };
 			}
 		}
@@ -131,7 +148,6 @@ function solveStep(grid) {
 }
 
 function lineOfSight(cellRow, cellCol, grid) {
-	const candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 	const seen = [];
 
 	for (const [colIndex, cell] of grid[cellRow].entries()) {
@@ -157,6 +173,13 @@ function lineOfSight(cellRow, cellCol, grid) {
 			seen.push(value);
 		}
 	}
+
+	return seen;
+}
+
+function onlyOnePossible(cellRow, cellCol, grid) {
+	const candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+	const seen = lineOfSight(cellRow, cellCol, grid);
 
 	const diff = candidates.filter(num => !seen.includes(num));
 
@@ -193,4 +216,36 @@ function lastInBox(cellRow, cellCol, grid) {
 	}
 
 	return diff[0];
+}
+
+function onlyOneSpotValidForNumber(cellRow, cellCol, grid) {
+	let candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+	
+	const cellLos = lineOfSight(cellRow, cellCol, grid);
+	
+	candidates = candidates.filter(num => !cellLos.includes(num));
+	
+	const rowOffset = Math.floor(cellRow / 3) * 3;
+	const colOffset = Math.floor(cellCol / 3) * 3;
+	
+	for (let i = rowOffset; i < rowOffset + 3; i++) {
+		for (let j = colOffset; j < colOffset + 3; j++) {
+			if (i === cellRow && j === cellCol) continue;
+			
+			if (grid[i][j].value) {
+				candidates = candidates.filter(n => n != grid[i][j].value);
+				continue;
+			}
+			
+			const los = lineOfSight(i, j, grid);
+			
+			candidates = candidates.filter(n => los.includes(n));
+		}
+	}
+	
+	if (candidates.length != 1) {
+		return null
+	}
+	
+	return candidates[0];
 }
