@@ -190,9 +190,22 @@ function lineOfSight(cellRow, cellCol, grid) {
 }
 
 function onlyOnePossible(cellRow, cellCol, grid) {
-	const candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+	let candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 	const seen = lineOfSight(cellRow, cellCol, grid);
 
+	const rowOffset = Math.floor(cellRow / 3) * 3;
+	const colOffset = Math.floor(cellCol / 3) * 3;
+	
+	for (let i = rowOffset; i < rowOffset + 3; i++) {
+		for (let j = colOffset; j < colOffset + 3; j++) {
+			if (i === cellRow && j === cellCol) continue;
+			
+			if (grid[i][j].value) {
+				candidates = candidates.filter(n => n != grid[i][j].value);
+			}
+		}
+	}
+	
 	const diff = candidates.filter(num => !seen.includes(num));
 
 	if (diff.length != 1) {
