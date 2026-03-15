@@ -3,107 +3,25 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
 	<title>Sudoku Solver</title>
-
-	<link rel="stylesheet" href="reset.css">
+	
 	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 
-	<style>
-		:root {
-			--highlight: oklch(0.44 0.3 266 / 0.75);
-			--highlight-dark: oklch(from var(--highlight) calc(l - 0.15) c h);
-
-			--border: black;
-			--border-light: gray;
-
-			--text: rgb(66, 66, 66);
-			--text-light: rgb(61, 100, 216);
-		}
-
-		* {
-			box-sizing: border-box;
-			font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-			font-weight: 500;
-			font-size: min(15px, 1.5vw);
-		}
-
-		body {
-			display: flex;
-			height: 100vh;
-			justify-content: center;
-			align-items: center;
-			flex-direction: column;
-		}
-
-		#sudoku-controller {
-			width: 50vw;
-			display: flex;
-			justify-content: space-between;
-			padding: 1rem;
-		}
-
-		#sudoku-controller button {
-			color: white;
-			background-color: var(--highlight);
-			border: 1px solid var(--highlight-dark);
-			border-radius: .5rem;
-			padding: 8px 16px;
-			cursor: pointer;
-		}
-
-		#sudoku-controller button:hover {
-			background-color: var(--highlight-dark);
-		}
-
-		#sudoku-container {
-			display: grid;
-			grid: repeat(9, auto) / repeat(9, auto);
-			border: 2px solid var(--border);
-		}
-
-		.sudoku-cell {
-			color: var(--text-light);
-			aspect-ratio: 1 / 1;
-			margin: 0;
-			padding: 0;
-			width: 5rem;
-			text-align: center;
-			font-size: 3rem;
-			cursor: pointer;
-			caret-color: transparent;
-			border: 1px solid var(--border-light);
-		}
-
-		.sudoku-cell:focus {
-			outline: 2px solid var(--highlight);
-			border: 1px solid white;
-			box-shadow: 0px 0px 6px 2px var(--highlight);
-			z-index: 2;
-		}
-
-		.starting-cell {
-			color: var(--text);
-		}
-
-		.br { border-right: 2px solid var(--border); }
-		.bb { border-bottom: 2px solid var(--border); }
-		.bl { border-left: 2px solid var(--border); }
-		.bt { border-top: 2px solid var(--border); }
-	</style>
+	<link rel="stylesheet" href="reset.css">
+	<link rel="stylesheet" href="sudoku.css">
 </head>
 <body>
 	<div id="sudoku-controller">
 		<button id="solve-all">Solve All</button>
 
 		<button id="solve-one">Solve Step</button>
-
-		<button id="undo-one">Undo Step</button>
 		
-		<button id="undo-all">Undo All</button>
+		<button id="reset">Reset</button>
 	</div>
 
 	<div id="sudoku-container"></div>
 
-	<script src="index.js"></script>
+	<script type="module" src="index.js"></script>
 </body>
 </html>

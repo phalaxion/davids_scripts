@@ -1,364 +1,173 @@
+
+// SET CSS CLASSES TO HAVE A LITTLE VISIBLE NUMBER when updating possible values
+
+import { Grid } from './sudoku.js'
+
 const DEBUG = true;
 const GRID_SIZE = 9;
+const ATTEMPT_LIMIT = 50;
+
+const easyCode = "060308100581009600003500000090802000000745936350006804135000000708613400940007300";
+const mediumCode = "203400005809160704006030019702003060008250000001607002007005926930720000600090470";
+const hardCode = "100034008070680030008210704054090680910508020080300005305906871006000040001070200";
+const expertCode = "150082000300070010000000753000527609000000500040063807400008000703040100008600300";
+const masterCode = "000600489640000050020040000000005803180000924070020100008090040000007208003000001";
+const extremeCode = "007003001005120040200006000000002000004000900500780006800510007070000060000300000";
 
 globalThis.addEventListener('DOMContentLoaded', (e) => {
-	const easyCode = "9,,,5,,8,,,7|,8,,3,,2,9,,5|,5,4,,,,,8,|,7,,6,8,,,3,2|1,,,,,4,,,8|5,,,2,1,9,,6,|,,,9,,6,,,1|7,2,6,,,1,,4,|,,1,4,7,,,5,6";
-	const mediumCode = "3,,,,,7,,1,,|,4,,5,2,,,,,|7,,9,4,,,,,,|1,,2,,,,,,,|,,7,9,,6,8,,,|,,,,,,3,,7|,,,,,9,2,,6|,,,,7,4,,3,,|,6,,2,,,,,4|";
-	
-	
-	const startingValues = mediumCode.split('|').map(row => row.split(','));
-
-	const stepHistory = [];
-	let grid = generateGrid(GRID_SIZE);
-
-	loadGrid(grid, startingValues);
-
+	const container = document.getElementById('sudoku-container');
 	const solveAllButton = document.getElementById('solve-all');
 	const solveOneButton = document.getElementById('solve-one');
-	const undoOneButton = document.getElementById('undo-one');
-	const undoAllButton = document.getElementById('undo-all');
+	const resetButton = document.getElementById('reset');
+	
+	const grid = new Grid(GRID_SIZE, DEBUG);
+	grid.generate(container);
+	grid.load(extremeCode);
 
 	solveAllButton.onclick = (e) => {
-		let step;
-		while (step = solveStep(grid)) {
-			stepHistory.push(step);
-			grid[step.rowIndex][step.colIndex].value = step.result;
-		}
+		while (solveStep(grid));
 	}
 	
 	solveOneButton.onclick = (e) => {
-		// rowOneValidSpot(0, 2, grid)
-	
-		const step = solveStep(grid);
-
-		if (!step) {
-			return;
-		}
-
-		stepHistory.push(step);
-		grid[step.rowIndex][step.colIndex].value = step.result;
-	}
-
-	undoOneButton.onclick = (e) => {
-		if (stepHistory.length === 0) {
-			return;
-		}
-
-		const step = stepHistory.pop();
-		grid[step.rowIndex][step.colIndex].value = "";
+		solveStep(grid);
 	}
 	
-	undoAllButton.onclick = (e) => {
-		while (stepHistory.length > 0) {
-			const step = stepHistory.pop();
-			grid[step.rowIndex][step.colIndex].value = "";
-		}
+	resetButton.onclick = (e) => {
+		grid.load(extremeCode);
 	}
 });
 
-function generateGrid(size) {
-	const container = document.getElementById('sudoku-container');
+function solveStep(grid) {
+	if (!grid.leftToSolve) {
+		if (DEBUG) console.log(`Grid is fully solved`);
+		return false;
+	}
 	
-	const inputGrid = [];
-	for (let row = 0; row < size; row++) {
-		const inputRow = [];
-		const rowMod = row % 3;
-
-		for (let col = 0; col < size; col++) {
-			const colMod = col % 3
+	let solvedCell = null;
+	
+	for (let attempts = 0; attempts <= ATTEMPT_LIMIT; attempts++) {
+		if (solvedCell) {
+			break;
+		}
+		
+		for (const row of grid.cells) {
+			if (solvedCell) {
+				break;
+			}
 			
-			let input = document.createElement('input');
-			input.type = 'text';
-			input.maxLength = 1;
-			
-			if (colMod === 0) {
-				input.classList.add('bl');
-			}
-
-			if (colMod === 2) {
-				input.classList.add('br');
-			}
-
-			if (rowMod === 0) {
-				input.classList.add('bt');
-			}
-
-			if (rowMod === 2) {
-				input.classList.add('bb');
-			}
-
-			input.classList.add('sudoku-cell');
-
-			if (DEBUG) {
-				input.onclick = (e) => {
-					console.log(row, col);
+			for (const cell of row) {
+				if (cell.value) continue;
+				
+				if (isNakedSingle(cell)) {
+					solvedCell = cell;
+					break;
+				}
+				
+				if (isLastInBox(cell)) {
+					solvedCell = cell;
+					break;
+				}
+				
+				if (isLastInRow(cell)) {
+					solvedCell = cell;
+					break;
+				}
+				
+				if (isLastInColumn(cell)) {
+					solvedCell = cell;
+					break;
 				}
 			}
-			
-			container.appendChild(input);
-			inputRow.push(input);
 		}
-
-		inputGrid.push(inputRow);
 	}
-
-	return inputGrid;
+	
+	if (solvedCell) {
+		if (DEBUG) console.log(`Found a value at ${solvedCell.row}, ${solvedCell.col}`);
+	}
+	else {
+		if (DEBUG) console.log(`Failed to find a value in ${ATTEMPT_LIMIT} attempts`);
+	}
+	
+	return solvedCell !== null
 }
 
-function loadGrid(grid, startingValues) {
-	for (const [rowIndex, row] of startingValues.entries()) {
-		for (const [colIndex, cell] of row.entries()) {
-			if (!cell) {
-				continue;
-			}
-
-			grid[rowIndex][colIndex].value = cell
-			grid[rowIndex][colIndex].readOnly = true;
-			grid[rowIndex][colIndex].classList.add('starting-cell');
-		}
+function isNakedSingle(cell) {
+	if (cell.possible.length != 1) {
+		return false;
 	}
+	
+	cell.parentGrid.setValue(cell.row, cell.col, cell.possible[0]);
+	
+	return true;
 }
 
-function solveStep(grid) {
-	for (const [rowIndex, row] of grid.entries()) {
-		for (const [colIndex, cell] of row.entries()) {
-			// If it's already been solved, ignore it
-			if (cell.value) {
-				continue;
-			}
+function isLastInBox(cell) {
+	let cellPossible = cell.possible;
+	
+	const boxRow = Math.floor(cell.row / 3) * 3;
+	const boxCol = Math.floor(cell.col / 3) * 3;
+	
+	for (let row = boxRow; row < boxRow + 3; row++) {
+		for (let col = boxCol; col < boxCol + 3; col++) {
+			if (row === cell.row && col === cell.col) continue;
 			
-			let result;
+			const boxCell = cell.parentGrid.cells[row][col];
 			
-			result = onlyOnePossible(rowIndex, colIndex, grid)
-			if (result) {
-				return { rowIndex, colIndex, result };
-			}
+			if (boxCell.solved) continue;
 			
-			result = lastInBox(rowIndex, colIndex, grid)
-			if (result) {
-				return { rowIndex, colIndex, result };
-			}
-			
-			result = boxOneValidSpot(rowIndex, colIndex, grid)
-			if (result) {
-				return { rowIndex, colIndex, result };
-			}
-			
-			result = rowOneValidSpot(rowIndex, colIndex, grid)
-			if (result) {
-				return { rowIndex, colIndex, result };
-			}
-			
-			result = colOneValidSpot(rowIndex, colIndex, grid)
-			if (result) {
-				return { rowIndex, colIndex, result };
-			}
+			cellPossible = cellPossible.filter(n => !boxCell.possible.includes(n));
 		}
 	}
-
-	return null;
+	
+	if (cellPossible.length != 1) {
+		return false;
+	}
+	
+	cell.parentGrid.setValue(cell.row, cell.col, cellPossible[0]);
+	
+	return true;
 }
 
-function lineOfSight(cellRow, cellCol, grid) {
-	const seen = [];
-
-	for (const [colIndex, cell] of grid[cellRow].entries()) {
-		const value = cell.value;
-
-		if (!value) {
-			continue;
-		}
-
-		if (!seen.includes(value)) {
-			seen.push(value);
-		}
-	}
-
-	for (const [rowIndex, row] of grid.entries()) {
-		const value = row[cellCol].value;
-
-		if (!value) {
-			continue;
-		}
-
-		if (!seen.includes(value)) {
-			seen.push(value);
-		}
-	}
-
-	return seen;
-}
-
-function onlyOnePossible(cellRow, cellCol, grid) {
-	let candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-	const seen = lineOfSight(cellRow, cellCol, grid);
-
-	const rowOffset = Math.floor(cellRow / 3) * 3;
-	const colOffset = Math.floor(cellCol / 3) * 3;
+function isLastInColumn(cell) {
+	let cellPossible = cell.possible;
 	
-	for (let i = rowOffset; i < rowOffset + 3; i++) {
-		for (let j = colOffset; j < colOffset + 3; j++) {
-			if (i === cellRow && j === cellCol) continue;
-			
-			if (grid[i][j].value) {
-				candidates = candidates.filter(n => n != grid[i][j].value);
-			}
-		}
-	}
-	
-	const diff = candidates.filter(num => !seen.includes(num));
-
-	if (diff.length != 1) {
-		return null;
-	}
-
-	return diff[0];
-}
-
-function lastInBox(cellRow, cellCol, grid) {
-	const candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-	const seen = [];
-	
-	const rowOffset = Math.floor(cellRow / 3) * 3;
-	const colOffset = Math.floor(cellCol / 3) * 3;
-	
-	for (let i = rowOffset; i < rowOffset + 3; i++) {
-		for (let j = colOffset; j < colOffset + 3; j++) {
-			const value = grid[i][j].value;
-
-			if (!value) {
-				continue;
-			}
-			
-			seen.push(value);
-		}
-	}
-	
-	const diff = candidates.filter(num => !seen.includes(num));
-
-	if (diff.length != 1) {
-		return null;
-	}
-
-	return diff[0];
-}
-
-function boxOneValidSpot(cellRow, cellCol, grid) {
-	let candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-	
-	const cellLos = lineOfSight(cellRow, cellCol, grid);
-	
-	candidates = candidates.filter(num => !cellLos.includes(num));
-	
-	const rowOffset = Math.floor(cellRow / 3) * 3;
-	const colOffset = Math.floor(cellCol / 3) * 3;
-	
-	for (let i = rowOffset; i < rowOffset + 3; i++) {
-		for (let j = colOffset; j < colOffset + 3; j++) {
-			if (i === cellRow && j === cellCol) continue;
-			
-			if (grid[i][j].value) {
-				candidates = candidates.filter(n => n != grid[i][j].value);
-				continue;
-			}
-			
-			const los = lineOfSight(i, j, grid);
-			
-			candidates = candidates.filter(n => los.includes(n));
-		}
-	}
-	
-	if (candidates.length != 1) {
-		return null
-	}
-	
-	return candidates[0];
-}
-
-function rowOneValidSpot(cellRow, cellCol, grid) {
-	let candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-	
-	const cellLos = lineOfSight(cellRow, cellCol, grid);
-	
-	candidates = candidates.filter(num => !cellLos.includes(num));
-	
-	const rowOffset = Math.floor(cellRow / 3) * 3;
-	const colOffset = Math.floor(cellCol / 3) * 3;
-	
-	for (let i = rowOffset; i < rowOffset + 3; i++) {
-		for (let j = colOffset; j < colOffset + 3; j++) {
-			if (i === cellRow && j === cellCol) continue;
-			
-			if (grid[i][j].value) {
-				candidates = candidates.filter(n => n != grid[i][j].value);
-			}
-		}
-	}
-	
-	if (candidates.length === 0) {
-		return null;
-	}
-	
-	for (let i = 0; i < 9; i++) {
-		if (i === cellCol) continue;
+	for (let col = 0; col < GRID_SIZE; col++) {
+		if (col === cell.col) continue;
 		
-		if (grid[cellRow][i].value) {
-			candidates = candidates.filter(n => n != grid[cellRow][i].value);
-			continue;
-		}
+		const boxCell = cell.parentGrid.cells[cell.row][col];
 		
-		const los = lineOfSight(cellRow, i, grid);
+		if (boxCell.solved) continue;
 		
-		candidates = candidates.filter(n => los.includes(n));
+		cellPossible = cellPossible.filter(n => !boxCell.possible.includes(n));
 	}
 	
-	if (candidates.length != 1) {
-		return null
+	if (cellPossible.length != 1) {
+		return false;
 	}
 	
-	return candidates[0];
+	cell.parentGrid.setValue(cell.row, cell.col, cellPossible[0]);
+	
+	return true;
 }
 
-function colOneValidSpot(cellRow, cellCol, grid) {
-	let candidates = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+function isLastInRow(cell) {
+	let cellPossible = cell.possible;
 	
-	const cellLos = lineOfSight(cellRow, cellCol, grid);
-	
-	candidates = candidates.filter(num => !cellLos.includes(num));
-	
-	const rowOffset = Math.floor(cellRow / 3) * 3;
-	const colOffset = Math.floor(cellCol / 3) * 3;
-	
-	for (let i = rowOffset; i < rowOffset + 3; i++) {
-		for (let j = colOffset; j < colOffset + 3; j++) {
-			if (i === cellRow && j === cellCol) continue;
-			
-			if (grid[i][j].value) {
-				candidates = candidates.filter(n => n != grid[i][j].value);
-			}
-		}
-	}
-	
-	if (candidates.length === 0) {
-		return null;
-	}
-	
-	for (let i = 0; i < 9; i++) {
-		if (i === cellRow) continue;
+	for (let row = 0; row < GRID_SIZE; row++) {
+		if (row === cell.row) continue;
 		
-		if (grid[i][cellCol].value) {
-			candidates = candidates.filter(n => n != grid[i][cellCol].value);
-			continue;
-		}
+		const boxCell = cell.parentGrid.cells[row][cell.col];
 		
-		const los = lineOfSight(i, cellCol, grid);
+		if (boxCell.solved) continue;
 		
-		candidates = candidates.filter(n => los.includes(n));
+		cellPossible = cellPossible.filter(n => !boxCell.possible.includes(n));
 	}
 	
-	if (candidates.length != 1) {
-		return null
+	if (cellPossible.length != 1) {
+		return false;
 	}
 	
-	return candidates[0];
+	cell.parentGrid.setValue(cell.row, cell.col, cellPossible[0]);
+	
+	return true;
 }
