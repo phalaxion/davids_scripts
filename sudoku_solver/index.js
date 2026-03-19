@@ -13,6 +13,8 @@ const hardCode = "10003400807068003000821070405409068091050802008030000530590687
 const expertCode = "150082000300070010000000753000527609000000500040063807400008000703040100008600300";
 const masterCode = "000600489640000050020040000000005803180000924070020100008090040000007208003000001";
 const extremeCode = "007003001005120040200006000000002000004000900500780006800510007070000060000300000";
+const extremeCode2 = "300049000000600501752001000001000700500396000008150096003010060004000100000028000";
+const extremeCode3 = "500900200000007000800600040060000010000000067304001009090800000010745000003000400";
 
 globalThis.addEventListener('DOMContentLoaded', (e) => {
 	const container = document.getElementById('sudoku-container');
@@ -23,7 +25,7 @@ globalThis.addEventListener('DOMContentLoaded', (e) => {
 	
 	const grid = new Grid(GRID_SIZE, DEBUG);
 	grid.generate(container);
-	grid.load(extremeCode);
+	grid.load(extremeCode2);
 
 	solveAllButton.onclick = (e) => {
 		while (solveStep(grid));
@@ -51,12 +53,9 @@ function solveStep(grid) {
 	}
 	
 	let solvedCell = null;
-	
-	let attempts = 0;
 	let canContinue = true;
-	while (canContinue || attempts > 30) {
-		attempts++;
 
+	while (canContinue) {
 		if (solvedCell) {
 			break;
 		}
@@ -102,6 +101,7 @@ function solveStep(grid) {
 				for (const cell of row) {
 					if (cell.solved) continue;
 
+					canContinue = canContinue || hasHiddenPair(grid, cell);
 					canContinue = canContinue || hasRowPointedPair(grid, cell);
 					canContinue = canContinue || hasColPointedPair(grid, cell);
 				}
@@ -110,7 +110,7 @@ function solveStep(grid) {
 	}
 	
 	if (!solvedCell) {
-		console.log(`Failed to find a value in ${ATTEMPT_LIMIT} attempts`);
+		console.log(`Failed to find a suitable value.`);
 	}
 	
 	return solvedCell !== null
@@ -197,6 +197,68 @@ function isLastInRow(grid, cell) {
 	return true;
 }
 
+function hasHiddenPair(grid, cell) {
+	let cellPossible = cell.possible;
+	
+	if (cellPossible.length !== 2) {
+		return false;
+	}
+
+	const boxRow = Math.floor(cell.row / 3) * 3;
+	const boxCol = Math.floor(cell.col / 3) * 3;
+	
+	let matchingCell = null;
+	for (let row = boxRow; row < boxRow + 3; row++) {
+		for (let col = boxCol; col < boxCol + 3; col++) {
+			if (row === cell.row && col === cell.col) continue;
+			
+			const boxCell = grid.cells[row][col];
+			
+			if (boxCell.solved) continue;
+			
+			if (cellPossible.every(n => boxCell.possible.includes(n))) {
+				if (matchingCell !== null) {
+					return false;
+				}
+
+				matchingCell = boxCell;
+			}
+		}
+	}
+
+	if (!matchingCell) {
+		return false;
+	}
+
+	for (let row = boxRow; row < boxRow + 3; row++) {
+		for (let col = boxCol; col < boxCol + 3; col++) {
+			if (row === cell.row && col === cell.col) continue;
+			if (row === matchingCell.row && col === matchingCell.col) continue;
+			
+			const boxCell = grid.cells[row][col];
+			
+			if (boxCell.solved) continue;
+			
+			if (boxCell.possible.filter(n => cellPossible.includes(n)) > 0) {
+				return false;
+			}
+		}
+	}
+	
+	let madeChange = false;
+	
+	const diff = matchingCell.possible.filter(n => !cellPossible.includes(n));
+	
+	if (diff.length > 0) {
+		if (DEBUG) console.log(`Eliminated ${diff} from ${matchingCell.row}, ${matchingCell.col} due to hidden pair with ${cell.row}, ${cell.col}`);
+		madeChange = true;
+
+		grid.setPossible(matchingCell.row, matchingCell.col, cellPossible);
+	}
+	
+	return madeChange;
+}
+
 function hasRowPointedPair(grid, cell) {
 	const boxRow = Math.floor(cell.row / 3) * 3;
 	const boxCol = Math.floor(cell.col / 3) * 3;
@@ -243,7 +305,7 @@ function hasRowPointedPair(grid, cell) {
 			if (rowCell.solved) return;
 			if (!rowCell.possible.includes(num)) return;
 			
-			if (DEBUG) console.log(`Eliminated ${cell.row}, ${col} due to pointed pair from ${num}s in col`);
+			if (DEBUG) console.log(`Eliminated ${num} from ${cell.row}, ${col} due to pointed pair in col`);
 
 			changedState = true;
 			grid.setPossible(cell.row, col, rowCell.possible.filter(n => n != num))
@@ -300,7 +362,7 @@ function hasColPointedPair(grid, cell) {
 			if (colCell.solved) return;
 			if (!colCell.possible.includes(num)) return;
 			
-			if (DEBUG) console.log(`Eliminated ${row}, ${cell.col} due to pointed pair from ${num}s in row`);
+			if (DEBUG) console.log(`Eliminated ${num} from ${row}, ${cell.col} due to pointed pair in row`);
 
 			changedState = true;
 			grid.setPossible(row, cell.col, colCell.possible.filter(n => n != num))
