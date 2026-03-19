@@ -20,25 +20,12 @@ export class Grid {
 			
 			for (let col = 0; col < this.gridSize; col++) {
 				const cell = new Cell(row, col);
-
-				let input = document.createElement('input');
-				input.type = 'text';
-				input.maxLength = 1;
-				input.classList.add('sudoku-cell');
-				
-				if (row % 3 === 0) input.classList.add('bt');
-				if (row % 3 === 2) input.classList.add('bb');
-				if (col % 3 === 0) input.classList.add('bl');
-				if (col % 3 === 2) input.classList.add('br');
-
-				input.onclick = (e) => {
-					console.log(cell.row, cell.col, cell.possible);
-				}
-
-				htmlGrid.appendChild(input);
-				elementRow.push(input);
-
 				cellRow.push(cell);
+
+				const element = cell.createElement();
+
+				htmlGrid.appendChild(element);
+				elementRow.push(element);
 			}
 
 			this.cells.push(cellRow);
@@ -85,7 +72,8 @@ export class Grid {
 			this.history.push(lastState);
 		}
 
-		this.grid[row][col].value = value;
+		const input = this.grid[row][col].querySelector('input');
+		input.value = value;
 
 		this.cells[row][col].value = value;
 		this.cells[row][col].solved = true;
@@ -120,6 +108,21 @@ export class Grid {
 	
 	setPossible(row, col, possible) {
 		this.cells[row][col].possible = possible;
+		
+		if (!this.debug) {
+			return;
+		}
+
+		for (let i = 1; i <= 9; i++) {
+			const note = this.grid[row][col].querySelector(`.note-${i}`)
+
+			if (!this.cells[row][col].solved & possible.includes(i.toString())) {
+				note.style.visibility = 'visible';
+			}
+			else {
+				note.style.visibility = 'hidden';
+			}
+		}
 	}
 	
 	getLineOfSight(row, col) {
@@ -169,5 +172,35 @@ export class Cell {
 	constructor(row, col) {
 		this.row = row;
 		this.col = col;
+	}
+
+	createElement() {
+		const wrapper = document.createElement('div');
+		wrapper.classList.add('sudoku-cell');
+		
+		if (this.row % 3 === 0) wrapper.classList.add('bt');
+		if (this.row % 3 === 2) wrapper.classList.add('bb');
+		if (this.col % 3 === 0) wrapper.classList.add('bl');
+		if (this.col % 3 === 2) wrapper.classList.add('br');
+
+		let input = document.createElement('input');
+		input.type = 'text';
+		input.maxLength = 1;
+
+		input.onclick = (e) => {
+			console.log(this.row, this.col, this.possible);
+		}
+
+		wrapper.appendChild(input);
+
+		for (let i = 1; i <= this.possible.length; i++) {
+			const note = document.createElement('span');
+			note.textContent = i;
+			note.classList.add('note', `note-${i}`);
+
+			wrapper.appendChild(note);
+		}
+
+		return wrapper;
 	}
 }

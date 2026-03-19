@@ -55,25 +55,61 @@ body {
 
 .sudoku-cell {
 	color: var(--text-light);
+	margin: 0;
+	padding: 0;
+	position: relative;
+}
+
+.sudoku-cell:has(input:focus) {
+	outline: 2px solid var(--highlight);
+	box-shadow: 0px 0px 6px 2px var(--highlight);
+	z-index: 10;
+}
+
+.sudoku-cell input {
 	aspect-ratio: 1 / 1;
 	margin: 0;
 	padding: 0;
+	cursor: pointer;
+	caret-color: transparent;
 	width: 5rem;
 	text-align: center;
 	font-size: 3rem;
-	cursor: pointer;
-	caret-color: transparent;
-	border: 1px solid var(--border-light);
-	position: relative;
 	z-index: 1;
+	border: none;
+	outline: none;
+	background-color: transparent;
+	border: 1px solid var(--border-light);
 }
 
-.sudoku-cell:focus {
-	outline: 2px solid var(--highlight);
+.sudoku-cell input:focus {
+	border: none;
+	outline: none;
 	border: 1px solid white;
-	box-shadow: 0px 0px 6px 2px var(--highlight);
-	z-index: 2;
 }
+
+.note {
+	position: absolute;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	font-weight: bold;
+	pointer-events: none;
+	z-index: 2;
+	visibility: hidden;
+}
+
+.note-1 { top: 4px; left: 4px; }
+.note-2 { top: 4px; left: 50%; transform: translateX(-50%); }
+.note-3 { top: 4px; right: 4px; }
+.note-4 { top: 50%; left: 4px; transform: translateY(-50%); }
+.note-5 { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.note-6 { top: 50%; right: 4px; transform: translateY(-50%); }
+.note-7 { bottom: 4px; left: 4px; }
+.note-8 { bottom: 4px; left: 50%; transform: translateX(-50%); }
+.note-9 { bottom: 4px; right: 4px; }
 
 .starting-cell {
 	color: var(--text);
