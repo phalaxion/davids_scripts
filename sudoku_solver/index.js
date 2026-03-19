@@ -52,7 +52,11 @@ function solveStep(grid) {
 	
 	let solvedCell = null;
 	
-	for (let attempts = 0; attempts <= ATTEMPT_LIMIT; attempts++) {
+	let attempts = 0;
+	let canContinue = true;
+	while (canContinue || attempts > 30) {
+		attempts++;
+
 		if (solvedCell) {
 			break;
 		}
@@ -63,7 +67,7 @@ function solveStep(grid) {
 			}
 			
 			for (const cell of row) {
-				if (cell.value) continue;
+				if (cell.solved) continue;
 				
 				if (isNakedSingle(grid, cell)) {
 					solvedCell = cell;
@@ -83,6 +87,23 @@ function solveStep(grid) {
 				if (isLastInColumn(grid, cell)) {
 					solvedCell = cell;
 					break;
+				}
+			}
+		}
+
+		if (!solvedCell) {
+			canContinue = false;
+
+			for (const row of grid.cells) {
+				if (solvedCell) {
+					break;
+				}
+				
+				for (const cell of row) {
+					if (cell.solved) continue;
+
+					canContinue = canContinue || hasRowPointedPair(grid, cell);
+					canContinue = canContinue || hasColPointedPair(grid, cell);
 				}
 			}
 		}
@@ -174,4 +195,117 @@ function isLastInRow(grid, cell) {
 	grid.setValue(cell.row, cell.col, cellPossible[0], 'last_in_row');
 	
 	return true;
+}
+
+function hasRowPointedPair(grid, cell) {
+	const boxRow = Math.floor(cell.row / 3) * 3;
+	const boxCol = Math.floor(cell.col / 3) * 3;
+	
+	const rowBoxCols = [boxCol, boxCol+1, boxCol+2];
+	const rowCols = [0, 1, 2, 3, 4, 5, 6, 7, 8].filter(n => !rowBoxCols.includes(n));
+
+	let onlyInRow = {};
+	for (let col = boxCol; col < boxCol + 3; col++) {
+		const boxCell = grid.cells[cell.row][col];
+
+		if (boxCell.solved) continue;
+
+		boxCell.possible.forEach(num => {
+			if (!onlyInRow[num]) {
+				onlyInRow[num] = 0;
+			}
+
+			onlyInRow[num]++;
+		});
+	}
+
+	for (let row = boxRow; row < boxRow + 3; row++) {
+		for (let col = boxCol; col < boxCol + 3; col++) {
+			if (row === cell.row) continue;
+			
+			const boxCell = grid.cells[row][col];
+			
+			if (boxCell.solved) continue;
+			
+			boxCell.possible.forEach(num => {
+				delete onlyInRow[num];
+			});
+		}
+	}
+
+	let changedState = false;
+	for (const [num, count] of Object.entries(onlyInRow)) {
+		if (count === 1) continue;
+
+		rowCols.forEach(col => {
+			const rowCell = grid.cells[cell.row][col];
+
+			if (rowCell.solved) return;
+			if (!rowCell.possible.includes(num)) return;
+			
+			if (DEBUG) console.log(`Eliminated ${cell.row}, ${col} due to pointed pair from ${num}s in col`);
+
+			changedState = true;
+			grid.setPossible(cell.row, col, rowCell.possible.filter(n => n != num))
+		});
+	}
+	
+	return changedState;
+}
+
+function hasColPointedPair(grid, cell) {
+	const boxRow = Math.floor(cell.row / 3) * 3;
+	const boxCol = Math.floor(cell.col / 3) * 3;
+	
+	const colBoxRows = [boxRow, boxRow+1, boxRow+2];
+	const colRows = [0, 1, 2, 3, 4, 5, 6, 7, 8].filter(n => !colBoxRows.includes(n));
+
+	let onlyInCol = {};
+	for (let row = boxRow; row < boxRow + 3; row++) {
+		const boxCell = grid.cells[row][cell.col];
+
+		if (boxCell.solved) continue;
+
+		boxCell.possible.forEach(num => {
+			if (!onlyInCol[num]) {
+				onlyInCol[num] = 0;
+			}
+
+			onlyInCol[num]++;
+		});
+	}
+
+	for (let row = boxRow; row < boxRow + 3; row++) {
+		for (let col = boxCol; col < boxCol + 3; col++) {
+			if (col === cell.col) continue;
+			
+			const boxCell = grid.cells[row][col];
+			
+			if (boxCell.solved) continue;
+			
+			boxCell.possible.forEach(num => {
+				delete onlyInCol[num];
+			});
+		}
+	}
+
+	let changedState = false;
+
+	for (const [num, count] of Object.entries(onlyInCol)) {
+		if (count === 1) continue;
+
+		colRows.forEach(row => {
+			const colCell = grid.cells[row][cell.col];
+
+			if (colCell.solved) return;
+			if (!colCell.possible.includes(num)) return;
+			
+			if (DEBUG) console.log(`Eliminated ${row}, ${cell.col} due to pointed pair from ${num}s in row`);
+
+			changedState = true;
+			grid.setPossible(row, cell.col, colCell.possible.filter(n => n != num))
+		});
+	}
+	
+	return changedState;
 }
