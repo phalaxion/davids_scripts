@@ -1,7 +1,10 @@
 export class Grid {
 	
 	debug = false;
+	grid = [];
 	cells = [];
+
+	history = [];
 	
 	constructor(gridSize, debug = false) {
 		this.gridSize = gridSize;
@@ -12,17 +15,34 @@ export class Grid {
 	
 	generate(htmlGrid) {
 		for (let row = 0; row < this.gridSize; row++) {
-			const inputRow = [];
+			const cellRow = [];
+			const elementRow = [];
 			
 			for (let col = 0; col < this.gridSize; col++) {
-				const cell = new Cell(this, row, col, this.debug);
+				const cell = new Cell(row, col);
+
+				let input = document.createElement('input');
+				input.type = 'text';
+				input.maxLength = 1;
+				input.classList.add('sudoku-cell');
 				
-				htmlGrid.appendChild(cell.html);
-				
-				inputRow.push(cell);
+				if (row % 3 === 0) input.classList.add('bt');
+				if (row % 3 === 2) input.classList.add('bb');
+				if (col % 3 === 0) input.classList.add('bl');
+				if (col % 3 === 2) input.classList.add('br');
+
+				input.onclick = (e) => {
+					console.log(cell.row, cell.col, cell.possible);
+				}
+
+				htmlGrid.appendChild(input);
+				elementRow.push(input);
+
+				cellRow.push(cell);
 			}
 
-			this.cells.push(inputRow);
+			this.cells.push(cellRow);
+			this.grid.push(elementRow);
 		}
 	}
 	
@@ -38,16 +58,36 @@ export class Grid {
 			for (let col = 0; col < this.gridSize; col++) {
 				if (!startingValues[row][col]) continue;
 				
-				this.cells[row][col].html.readOnly = true;
-				this.cells[row][col].html.classList.add('starting-cell');
-				this.setValue(row, col, startingValues[row][col])
+				this.grid[row][col].readOnly = true;
+				this.grid[row][col].classList.add('starting-cell');
+				this.setValue(row, col, startingValues[row][col], 'initialisation');
 			}
 		}
 	}
+
+	loadState(cells) {
+		for (let i = 0; i < cells.length; i++) {
+			for (let j = 0; j < cells[i].length; j++) {
+				if (this.grid[i][j].value === cells[i][j].value) {
+					continue;
+				}
+
+				this.grid[i][j].value = cells[i][j].value;
+			}
+		}
+		
+		this.cells = cells
+	}
 	
 	setValue(row, col, value, reason = null) {
+		if (reason !== "initialisation") {
+			const lastState = structuredClone(this.cells);
+			this.history.push(lastState);
+		}
+
+		this.grid[row][col].value = value;
+
 		this.cells[row][col].value = value;
-		this.cells[row][col].html.value = value;
 		this.cells[row][col].solved = true;
 		
 		this.leftToSolve--;
@@ -122,33 +162,12 @@ export class Grid {
 
 export class Cell {
 	
-	debug = false;
 	solved = false;
 	value = "";
 	possible = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 	
-	constructor(grid, row, col, debug = false) {
-		this.parentGrid = grid;
+	constructor(row, col) {
 		this.row = row;
 		this.col = col;
-		this.debug = debug;
-		
-		let input = document.createElement('input');
-		input.type = 'text';
-		input.maxLength = 1;
-		input.classList.add('sudoku-cell');
-		
-		if (row % 3 === 0) input.classList.add('bt');
-		if (row % 3 === 2) input.classList.add('bb');
-		if (col % 3 === 0) input.classList.add('bl');
-		if (col % 3 === 2) input.classList.add('br');
-
-		if (debug) {
-			input.onclick = (e) => {
-				console.log(this.row, this.col, this.possible);
-			}
-		}
-		
-		this.html = input;
 	}
 }

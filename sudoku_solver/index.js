@@ -18,11 +18,12 @@ globalThis.addEventListener('DOMContentLoaded', (e) => {
 	const container = document.getElementById('sudoku-container');
 	const solveAllButton = document.getElementById('solve-all');
 	const solveOneButton = document.getElementById('solve-one');
-	const resetButton = document.getElementById('reset');
+	const undoOneButton = document.getElementById('undo-one');
+	const undoAllButton = document.getElementById('undo-all');
 	
 	const grid = new Grid(GRID_SIZE, DEBUG);
 	grid.generate(container);
-	grid.load(extremeCode);
+	grid.load(easyCode);
 
 	solveAllButton.onclick = (e) => {
 		while (solveStep(grid));
@@ -32,8 +33,22 @@ globalThis.addEventListener('DOMContentLoaded', (e) => {
 		solveStep(grid);
 	}
 	
-	resetButton.onclick = (e) => {
-		grid.load(extremeCode);
+	undoOneButton.onclick = (e) => {
+		const lastState = grid.history.pop();
+
+		if (lastState) {
+			grid.loadState(lastState);
+			grid.leftToSolve++;
+		}
+	}
+
+	undoAllButton.onclick = (e) => {
+		let lastState;
+		
+		while (lastState = grid.history.pop()) {
+			grid.loadState(lastState);
+			grid.leftToSolve++;
+		}
 	}
 });
 
@@ -58,22 +73,22 @@ function solveStep(grid) {
 			for (const cell of row) {
 				if (cell.value) continue;
 				
-				if (isNakedSingle(cell)) {
+				if (isNakedSingle(grid, cell)) {
 					solvedCell = cell;
 					break;
 				}
 				
-				if (isLastInBox(cell)) {
+				if (isLastInBox(grid, cell)) {
 					solvedCell = cell;
 					break;
 				}
 				
-				if (isLastInRow(cell)) {
+				if (isLastInRow(grid, cell)) {
 					solvedCell = cell;
 					break;
 				}
 				
-				if (isLastInColumn(cell)) {
+				if (isLastInColumn(grid, cell)) {
 					solvedCell = cell;
 					break;
 				}
@@ -91,17 +106,17 @@ function solveStep(grid) {
 	return solvedCell !== null
 }
 
-function isNakedSingle(cell) {
+function isNakedSingle(grid, cell) {
 	if (cell.possible.length != 1) {
 		return false;
 	}
 	
-	cell.parentGrid.setValue(cell.row, cell.col, cell.possible[0]);
+	grid.setValue(cell.row, cell.col, cell.possible[0]);
 	
 	return true;
 }
 
-function isLastInBox(cell) {
+function isLastInBox(grid, cell) {
 	let cellPossible = cell.possible;
 	
 	const boxRow = Math.floor(cell.row / 3) * 3;
@@ -111,7 +126,7 @@ function isLastInBox(cell) {
 		for (let col = boxCol; col < boxCol + 3; col++) {
 			if (row === cell.row && col === cell.col) continue;
 			
-			const boxCell = cell.parentGrid.cells[row][col];
+			const boxCell = grid.cells[row][col];
 			
 			if (boxCell.solved) continue;
 			
@@ -123,18 +138,18 @@ function isLastInBox(cell) {
 		return false;
 	}
 	
-	cell.parentGrid.setValue(cell.row, cell.col, cellPossible[0]);
+	grid.setValue(cell.row, cell.col, cellPossible[0]);
 	
 	return true;
 }
 
-function isLastInColumn(cell) {
+function isLastInColumn(grid, cell) {
 	let cellPossible = cell.possible;
 	
 	for (let col = 0; col < GRID_SIZE; col++) {
 		if (col === cell.col) continue;
 		
-		const boxCell = cell.parentGrid.cells[cell.row][col];
+		const boxCell = grid.cells[cell.row][col];
 		
 		if (boxCell.solved) continue;
 		
@@ -145,18 +160,18 @@ function isLastInColumn(cell) {
 		return false;
 	}
 	
-	cell.parentGrid.setValue(cell.row, cell.col, cellPossible[0]);
+	grid.setValue(cell.row, cell.col, cellPossible[0]);
 	
 	return true;
 }
 
-function isLastInRow(cell) {
+function isLastInRow(grid, cell) {
 	let cellPossible = cell.possible;
 	
 	for (let row = 0; row < GRID_SIZE; row++) {
 		if (row === cell.row) continue;
 		
-		const boxCell = cell.parentGrid.cells[row][cell.col];
+		const boxCell = grid.cells[row][cell.col];
 		
 		if (boxCell.solved) continue;
 		
@@ -167,7 +182,7 @@ function isLastInRow(cell) {
 		return false;
 	}
 	
-	cell.parentGrid.setValue(cell.row, cell.col, cellPossible[0]);
+	grid.setValue(cell.row, cell.col, cellPossible[0]);
 	
 	return true;
 }
