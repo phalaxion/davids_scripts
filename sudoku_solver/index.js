@@ -23,7 +23,7 @@ globalThis.addEventListener('DOMContentLoaded', (e) => {
 	
 	const grid = new Grid(GRID_SIZE, DEBUG);
 	grid.generate(container);
-	grid.load(easyCode);
+	grid.load(extremeCode);
 
 	solveAllButton.onclick = (e) => {
 		while (solveStep(grid));
@@ -34,20 +34,12 @@ globalThis.addEventListener('DOMContentLoaded', (e) => {
 	}
 	
 	undoOneButton.onclick = (e) => {
-		const lastState = grid.history.pop();
-
-		if (lastState) {
-			grid.loadState(lastState);
-			grid.leftToSolve++;
-		}
+		grid.undoStep();
 	}
 
 	undoAllButton.onclick = (e) => {
-		let lastState;
-		
-		while (lastState = grid.history.pop()) {
-			grid.loadState(lastState);
-			grid.leftToSolve++;
+		while (grid.history.length > 0) {
+			grid.undoStep();
 		}
 	}
 });
@@ -96,11 +88,8 @@ function solveStep(grid) {
 		}
 	}
 	
-	if (solvedCell) {
-		if (DEBUG) console.log(`Found a value at ${solvedCell.row}, ${solvedCell.col}`);
-	}
-	else {
-		if (DEBUG) console.log(`Failed to find a value in ${ATTEMPT_LIMIT} attempts`);
+	if (!solvedCell) {
+		console.log(`Failed to find a value in ${ATTEMPT_LIMIT} attempts`);
 	}
 	
 	return solvedCell !== null
@@ -111,7 +100,7 @@ function isNakedSingle(grid, cell) {
 		return false;
 	}
 	
-	grid.setValue(cell.row, cell.col, cell.possible[0]);
+	grid.setValue(cell.row, cell.col, cell.possible[0], 'naked_single');
 	
 	return true;
 }
@@ -138,7 +127,7 @@ function isLastInBox(grid, cell) {
 		return false;
 	}
 	
-	grid.setValue(cell.row, cell.col, cellPossible[0]);
+	grid.setValue(cell.row, cell.col, cellPossible[0], 'last_in_box');
 	
 	return true;
 }
@@ -160,7 +149,7 @@ function isLastInColumn(grid, cell) {
 		return false;
 	}
 	
-	grid.setValue(cell.row, cell.col, cellPossible[0]);
+	grid.setValue(cell.row, cell.col, cellPossible[0], 'last_in_column');
 	
 	return true;
 }
@@ -182,7 +171,7 @@ function isLastInRow(grid, cell) {
 		return false;
 	}
 	
-	grid.setValue(cell.row, cell.col, cellPossible[0]);
+	grid.setValue(cell.row, cell.col, cellPossible[0], 'last_in_row');
 	
 	return true;
 }

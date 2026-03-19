@@ -31,6 +31,12 @@ export class Grid {
 			this.cells.push(cellRow);
 			this.grid.push(elementRow);
 		}
+
+		const self = this;
+		htmlGrid.addEventListener('cell_changed', function (e) {
+			console.log('Event data received:', e.detail);
+			self.setValue(e.detail.cell.row, e.detail.cell.col, e.detail.newValue, 'manual')
+		});
 	}
 	
 	load(gridCode) {
@@ -52,22 +58,36 @@ export class Grid {
 		}
 	}
 
-	loadState(cells) {
-		for (let i = 0; i < cells.length; i++) {
-			for (let j = 0; j < cells[i].length; j++) {
-				if (this.grid[i][j].value === cells[i][j].value) {
+	undoStep() {
+		if (this.history.length === 0) {
+			return;
+		}
+
+		this.cells = this.history.pop();
+
+		for (let i = 0; i < this.cells.length; i++) {
+			for (let j = 0; j < this.cells[i].length; j++) {
+				const input = this.grid[i][j].querySelector('input');
+
+				if (input.value === this.cells[i][j].value) {
 					continue;
 				}
 
-				this.grid[i][j].value = cells[i][j].value;
+				input.value = this.cells[i][j].value;
+
+				this.setPossible(i, j, this.cells[i][j].possible);
+
+				if (this.debug) console.log(`Undid step at ${i}, ${j}`);
 			}
 		}
-		
-		this.cells = cells
+
+		this.leftToSolve++;
 	}
 	
 	setValue(row, col, value, reason = null) {
 		if (reason !== "initialisation") {
+			if (this.debug) console.log(`Found a value at ${row}, ${col} using ${reason}`);
+
 			const lastState = structuredClone(this.cells);
 			this.history.push(lastState);
 		}
@@ -98,7 +118,7 @@ export class Grid {
 		const boxRow = Math.floor(row / 3) * 3;
 		const boxCol = Math.floor(col / 3) * 3;
 		
-		for (let i	 = boxRow; i < boxRow + 3; i++) {
+		for (let i = boxRow; i < boxRow + 3; i++) {
 			for (let j = boxCol; j < boxCol + 3; j++) {
 				if (this.cells[i][j].solved) continue;
 				this.setPossible(i, j, this.cells[i][j].possible.filter(n => n != value));
@@ -177,6 +197,9 @@ export class Cell {
 	createElement() {
 		const wrapper = document.createElement('div');
 		wrapper.classList.add('sudoku-cell');
+
+		wrapper.dataset.row = this.row;
+		wrapper.dataset.col = this.col;
 		
 		if (this.row % 3 === 0) wrapper.classList.add('bt');
 		if (this.row % 3 === 2) wrapper.classList.add('bb');
@@ -189,6 +212,16 @@ export class Cell {
 
 		input.onclick = (e) => {
 			console.log(this.row, this.col, this.possible);
+		}
+
+		input.oninput = (e) => {
+			wrapper.dispatchEvent(new CustomEvent('cell_changed', {
+				detail: {
+					cell: this,
+					newValue: e.data || ""
+				},
+				bubbles: true,
+			}));
 		}
 
 		wrapper.appendChild(input);

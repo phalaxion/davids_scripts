@@ -79,6 +79,7 @@ body {
 	border: none;
 	outline: none;
 	background-color: transparent;
+	color: var(--text-light);
 	border: 1px solid var(--border-light);
 }
 
@@ -111,7 +112,7 @@ body {
 .note-8 { bottom: 4px; left: 50%; transform: translateX(-50%); }
 .note-9 { bottom: 4px; right: 4px; }
 
-.starting-cell {
+.starting-cell input {
 	color: var(--text);
 }
 
