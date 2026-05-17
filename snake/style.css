@@ -1,0 +1,38 @@
+* {
+	box-sizing: border-box;
+	font-size: 40px;
+}
+
+body {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	background-color: antiquewhite;
+}
+
+#game-board {
+	display: inline-block;
+	gap: 0;
+	outline: 2px solid black;
+}
+
+.game-cell {
+	border: 1px solid black;
+	width: 1rem;
+	height: 1rem;
+	background-color: white;
+}
+
+.snake-cell {
+	background-color: green;
+}
+
+.food-cell {
+	background-color: red;
+}
+
+.snake-head {
+	background-image: url('snake.png');
+	background-size: contain;
+}
